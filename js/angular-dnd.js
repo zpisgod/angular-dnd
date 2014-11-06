@@ -2193,11 +2193,13 @@
 
 		function Lasso(opts){
 
-			var self = this;
+			var self = this, disabled = false;
 
 			opts = extend( {}, defaults, opts );
 
 			function dragstart(api) {
+                if(disabled) return;
+
 				var local = api.local = new Local(api);
 
 				if( !local.isTarget() ) {
@@ -2220,6 +2222,8 @@
 			};
 
 			function drag(api) {
+                if(disabled) return;
+
 				var local = api.local;
 
 				if( !local.active )  {
@@ -2257,6 +2261,8 @@
 			};
 
 			function dragend(api) {
+                if(disabled) return;
+
 				var local = api.local;
 
 				if( !local.active ) {
@@ -2296,7 +2302,15 @@
 				events[name].forEach(function(fn) {
 					fn.apply(this, args);
 				});
-			}
+            }
+
+            this.disable = function(){
+                disabled = true;
+            };
+
+            this.enable = function(){
+                disabled = false;
+            };
 		}
 
 		return Lasso;
@@ -2376,10 +2390,13 @@
 				var dragstartCallback = $parse(attrs.dndLassoOnstart);
 				var dragCallback = $parse(attrs.dndLassoOndrag);
 				var dragendCallback = $parse(attrs.dndLassoOnend);
-				var clickCallback = $parse(attrs.dndLassoOnclick);
 				var lasso = new DndLasso({ $el:$el }), selectable, keyPressed;
 
 				ctrls.push(ctrl);
+
+                scope.$watch(attrs.dndLassoArea, function(n){
+                    n === undefined || n == false ? lasso.disable() : lasso.enable();
+                });
 
 				function onClick(event){
 					if(!ctrl.empty()) {
@@ -2390,7 +2407,7 @@
 						}
 						
 						var s = ctrl.get();
-						
+
 						for(var i = 0; i < s.length; i++){
 							s[i].unselected().unselecting();
 						}
@@ -2398,8 +2415,8 @@
 						if(selectable) selectable.selected();
 						
 					}
-					
-					clickCallback( scope, {$event: event});
+
+                    dragendCallback(scope);
 
 					scope.$apply();
 				}
@@ -2476,22 +2493,16 @@
 				}
 
 				$el.on('mousedown touchstart', throttle(function (event){
-
+                    selectable = ctrl.getSelectable(event.target);
 					scope.$dragged = false;
-					
-					//scope.$keypressed = keyPressed = ( dndKey.isset(16) || dndKey.isset(17) || dndKey.isset(18) );
+
 					scope.$keypressed = keyPressed = opts.selectAdditionals ? ( event.shiftKey || event.ctrlKey || event.metaKey ) : false;
 
-					if(!ctrl.empty()) {
-						selectable = ctrl.getSelectable(event.target);
-					}
-
 					scope.$apply();
-
 				}, 300) );
 
-				$el.on('click', function(event){
-
+				$(document).on('click', function(event) {
+                    selectable = ctrl.getSelectable(event.target);
 					if(!scope.$dragged) onClick(event);
 
 					/* что бы события dnd-on-* получили флаг $keypressed, переключение флага происходит после их выполнения */
@@ -2526,13 +2537,10 @@
 			var getterSelecting = $parse($attrs.dndModelSelecting), setterSelecting = getterSelecting.assign || noop;
 			var getterSelected = $parse($attrs.dndModelSelected), setterSelected = getterSelected.assign || noop;
 			var getterSelectable = $parse($attrs.dndSelectable), setterSelectable = getterSelectable.assign || noop;
-			var onSelected = $parse($attrs.dndOnSelected);
-			var onUnselected = $parse($attrs.dndOnUnselected);
-			var onSelecting = $parse($attrs.dndOnSelecting);
-			var onUnselecting = $parse($attrs.dndOnUnselecting);
-
-
-
+			var onSelected = $parse($attrs.dndOnselected);
+			var onUnselected = $parse($attrs.dndOnunselected);
+			var onSelecting = $parse($attrs.dndOnselecting);
+			var onUnselecting = $parse($attrs.dndOnunselecting);
 
 			setterSelected($scope, false);
 			setterSelecting($scope, false);
@@ -2840,14 +2848,14 @@
 			
 			$scope.$parent.$watch(function(){
 				var rect = getter($scope.$parent);
-				
+
 				if(rect !== lastRect) setter($scope, rect);
 			});
 			
 			$scope.$watch($attrs.dndRect, function(n, o){
 				if(!n || typeof n != 'object') return;
 				if(o == undefined) o = {};
-				
+
 				var lastRect = n = sanitize(n);
 
 				var css = {};
