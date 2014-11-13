@@ -123,7 +123,8 @@ Angular-DND 0.1.8
 Директива, которая представляет собой модель элемента, описывающую его координаты относительно верхнего левого угла, размеры и матрицу преобразования (top, left, width, height, transform).
 Директивы dnd-draggable, dnd-resizable, dnd-rotatable, dnd-fittext, а также dnd-selectable(опционально) работают в связке с dnd-rect.
 
-
+#### dnd-rect-ctrl (object)
+экспорт контрола
 
 
 

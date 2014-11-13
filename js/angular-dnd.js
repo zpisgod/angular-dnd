@@ -16,7 +16,7 @@
 	 */
 
 	angular.dnd = {};
-	angular.dnd.version = '0.1.7';
+	angular.dnd.version = '0.1.8';
 
 	/* ENVIRONMENT VARIABLES */
 
@@ -2791,6 +2791,8 @@
 		Controller.$inject = ['$scope', '$attrs', '$element'];
 		function Controller( $scope, $attrs, $element ){
 			var getter = $parse($attrs.dndRect), setter = getter.assign, lastRect;
+
+            $attrs.dndRectCtrl && $parse($attrs.dndRectCtrl).assign($scope, this);
 
 			this.update = function(prop, value) {
 				var values, rect = getter($scope) || {};
